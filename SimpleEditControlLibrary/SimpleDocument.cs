@@ -39,27 +39,32 @@ namespace SimpleEditControlLibrary {
             public float SpacingHanWestern { get; private set; }
             public float SpacingWestern { get; private set; }
 
-            public SimpleLine(List<SimpleChar> chars) {
+            public SimpleLine() {
                 Line = new List<SimpleChar>();
                 SpacingHanzi = BEST_SPACING;
                 SpacingHanWestern = MIN_SPACING;
                 SpacingWestern = 1;
+            }
+
+            public SimpleLine(List<SimpleChar> chars)
+                : this() {
                 Append(chars);
+            }
+
+            public bool Contains(SimpleChar sc) {
+                return Line.Contains(sc);
             }
 
             public void Insert(int position, List<SimpleChar> chars) {
                 Line.InsertRange(position, chars);
-                ReCalcSpacing();
             }
 
             public void Append(List<SimpleChar> chars) {
                 Line.AddRange(chars);
-                ReCalcSpacing();
             }
 
             public void Delete(int position, int count) {
                 Line.RemoveRange(position, count);
-                ReCalcSpacing();
             }
 
             public void ReCalcSpacing() {
@@ -80,6 +85,7 @@ namespace SimpleEditControlLibrary {
             }
 
             public List<SimpleChar> Overflow() {
+                ReCalcSpacing();
                 float len = 0;
                 int index = -1;
                 for (int i = 0; i < Line.Count; i++) {
@@ -116,10 +122,68 @@ namespace SimpleEditControlLibrary {
                     }
                 }
             }
-
         }
 
-        private List<SimpleLine> lines;
+        class SimpleSection {
+            public List<SimpleLine> Lines { get; set; }
+
+            public SimpleSection() {
+                this.Lines = new List<SimpleLine>();
+                this.Lines.Add(new SimpleLine());
+            }
+
+            public SimpleSection(List<SimpleChar> chars):this() {
+                Append(chars);
+            }
+
+            public void Append(List<SimpleChar> chars) {
+                List<SimpleChar> rest = PickUpChars(chars);
+
+                SimpleLine lastLine = Lines.LastOrDefault();
+                lastLine.Append(rest);
+                List<SimpleChar> overflow = lastLine.Overflow();
+                while (overflow != null) {
+                    SimpleLine newLine = new SimpleLine(overflow);
+                    this.Lines.Add(newLine);
+                    overflow = newLine.Overflow();
+                }
+            }
+
+            public bool Contains(SimpleChar sc) {
+                return Lines.Exists(x => x.Line.Contains(sc));
+            }
+
+            public void Insert(SimpleChar position, List<SimpleChar> chars) {
+                List<SimpleChar> rest = PickUpChars(chars);
+
+                int lineIndex = Lines.FindIndex(x => x.Contains(position));
+                SimpleLine currentLine = Lines[lineIndex];
+                currentLine.Insert(currentLine.Line.IndexOf(position), rest);
+
+                List<SimpleChar> overflow = currentLine.Overflow();
+                for (int j = lineIndex + 1; j < Lines.Count && overflow != null; j++) {
+                    SimpleLine line = Lines[j];
+                    line.Insert(0, overflow);
+                    overflow = line.Overflow();
+                }
+                while (overflow != null) {
+                    SimpleLine newLine = new SimpleLine(overflow);
+                    Lines.Add(newLine);
+                    overflow = newLine.Overflow();
+                }
+            }
+
+            private List<SimpleChar> PickUpChars(List<SimpleChar> chars) {
+                int i = chars.FindIndex(x => (x.Ch == '\r' || x.Ch == '\n')); // 找到第一个回车
+                i = i < 0 ? chars.Count : i;
+                List<SimpleChar> rest = chars.GetRange(0, i); // 取得第一个回车前的内容
+                chars.RemoveRange(0, i); // 清除本段内容
+                return rest;
+            }
+        }
+
+        //private List<SimpleLine> lines;
+        private List<SimpleSection> sections;
         private Size size;
         private Font font;
         public Image DrawBuffer { get; private set; }
@@ -131,17 +195,12 @@ namespace SimpleEditControlLibrary {
             this.font = font;
             //this.font = new Font("微软雅黑", 24f);
 
-            this.lines = new List<SimpleLine>();
+            this.sections = new List<SimpleSection>();
+            this.sections.Add(new SimpleSection());
 
             this.insertPos = null;
 
-            List<SimpleChar> chars = ConvertChars(text);
-            List<SimpleChar> overflow = chars;
-            do {
-                SimpleLine newLine = new SimpleLine(overflow);
-                this.lines.Add(newLine);
-                overflow = newLine.Overflow();
-            } while (overflow != null);
+            Insert(text);
 
             DrawText();
         }
@@ -168,16 +227,18 @@ namespace SimpleEditControlLibrary {
         private void DrawText() {
             Image buffer = new Bitmap(this.size.Width, this.size.Height);
             Graphics g = Graphics.FromImage(buffer);
-            for (int i = 0; i < this.lines.Count; i++) {
-                SimpleLine line = this.lines[i];
-                float y = i * (this.font.Height + ROW_SPACING);
-                float x = 0;
-                for (int j = 0; j < line.Line.Count; j++) {
-                    SimpleChar sc = line.Line[j];
-                    x += line.CharSpacing(j);
-                    g.FillRectangle(Brushes.Yellow, new RectangleF(x, y, sc.Width, sc.Height));
-                    g.DrawString(sc.ToString(), this.font, Brushes.Black, x, y, StringFormat.GenericTypographic);
-                    x += sc.Width;
+            float y = 0;
+            foreach (SimpleSection sec in this.sections) {
+                foreach (SimpleLine line in sec.Lines) {
+                    float x = 0;
+                    for (int j = 0; j < line.Line.Count; j++) {
+                        SimpleChar sc = line.Line[j];
+                        x += line.CharSpacing(j);
+                        g.FillRectangle(Brushes.Yellow, new RectangleF(x, y, sc.Width, sc.Height));
+                        g.DrawString(sc.ToString(), this.font, Brushes.Black, x, y, StringFormat.GenericTypographic);
+                        x += sc.Width;
+                    }
+                    y += ROW_SPACING + this.font.Height;
                 }
             }
             this.DrawBuffer = buffer;
@@ -186,34 +247,32 @@ namespace SimpleEditControlLibrary {
         public void Insert(String text) {
             List<SimpleChar> chars = ConvertChars(text);
             if (this.insertPos == null) {
-                SimpleLine lastLine = lines.LastOrDefault();
-                lastLine.Append(chars);
-                List<SimpleChar> overflow = lastLine.Overflow();
-                while (overflow != null) {
-                    SimpleLine newLine = new SimpleLine(overflow);
-                    lines.Add(newLine);
-                    overflow = newLine.Overflow();
+                SimpleSection lastSec = sections.LastOrDefault();
+                lastSec.Append(chars);
+                while (chars.Count != 0) {
+                    trimLeftReturn(chars);
+                    this.sections.Add(new SimpleSection(chars));
                 }
             } else {
-                int lineIndex = lines.FindIndex(x => x.Line.Contains(this.insertPos));
-                SimpleLine currentLine = lines[lineIndex];
-                int charIndex = currentLine.Line.IndexOf(this.insertPos);
-                currentLine.Insert(charIndex, chars);
-
-                List<SimpleChar> overflow = currentLine.Overflow();
-                for (int i = lineIndex + 1; i < lines.Count && overflow != null; i++) {
-                    SimpleLine line = lines[i];
-                    line.Insert(0, overflow);
-                    overflow = line.Overflow();
+                int secIndex = sections.FindIndex(x => x.Contains(this.insertPos));
+                SimpleSection currentSec = sections[secIndex];
+                currentSec.Insert(this.insertPos, chars);
+                List<SimpleSection> block = new List<SimpleSection>();
+                while (chars.Count != 0) {
+                    trimLeftReturn(chars);
+                    block.Add(new SimpleSection(chars));
                 }
-                while (overflow != null) {
-                    SimpleLine newLine = new SimpleLine(overflow);
-                    lines.Add(newLine);
-                    overflow = newLine.Overflow();
-                }
+                this.sections.InsertRange(secIndex, block);
             }
 
             DrawText();
+        }
+
+        private void trimLeftReturn(List<SimpleChar> chars) {
+            if (chars.Count != 0 && chars[0].Ch == '\r' || chars[0].Ch == '\n')
+                chars.RemoveAt(0);
+            if (chars.Count != 0 && (chars[0].Ch == '\r' || chars[0].Ch == '\n'))
+                chars.RemoveAt(0);
         }
 
         public Point CursorLocation() {
@@ -221,26 +280,33 @@ namespace SimpleEditControlLibrary {
         }
 
         private Point CharLocation(SimpleChar activeChar) {
-            Point p = new Point(0, 0);
-            SimpleLine currentLine;
-            if (activeChar == null) {
-                currentLine = lines.Last();
-                p.Y = Convert.ToInt32((lines.Count - 1) * (font.Height + ROW_SPACING));
-            } else {
-                int line = lines.FindIndex(x => x.Line.Contains(activeChar));
-                currentLine = lines[line];
-                p.Y = Convert.ToInt32(line * (font.Height + ROW_SPACING));
+            float left = 0;
+            float top = 0;
+
+            SimpleLine currentLine = null;
+            foreach (SimpleSection sec in sections) {
+                foreach (SimpleLine line in sec.Lines) {
+                    if (activeChar != null && line.Contains(activeChar)) {
+                        currentLine = line;
+                        break;
+                    }
+                    top += font.Height + ROW_SPACING;
+                }
+            }
+            if (currentLine == null) {
+                currentLine = sections.LastOrDefault().Lines.LastOrDefault();
+                top -= font.Height + ROW_SPACING;
             }
 
-            float left = 0;
             for (int i = 0; i < currentLine.Line.Count; i++) {
                 SimpleChar sc = currentLine.Line[i];
-                if (sc == activeChar) {
+                if (activeChar != null && sc == activeChar) {
                     break;
                 }
                 left += currentLine.CharSpacing(i) + sc.Width;
             }
-            p.X = Convert.ToInt32(left);
+
+            Point p = new Point(Convert.ToInt32(left), Convert.ToInt32(top));
             return p;
         }
 
@@ -249,13 +315,24 @@ namespace SimpleEditControlLibrary {
         }
 
         private SimpleChar LocateChar(Point location) {
-            int line = (int)((float)location.Y / (font.Height + ROW_SPACING));
+            float top = 0;
+
+            SimpleLine currentLine = null;
+            foreach (SimpleSection sec in sections) {
+                foreach (SimpleLine line in sec.Lines) {
+                    top += font.Height + ROW_SPACING;
+                    if (top > location.Y) {
+                        currentLine = line;
+                        break;
+                    }
+                }
+            }
             bool tail = false;
-            if (line >= this.lines.Count) {
-                line = this.lines.Count - 1;
+            if (currentLine == null) {
+                currentLine = sections.LastOrDefault().Lines.LastOrDefault();
                 tail = true;
             }
-            SimpleLine currentLine = lines[line];
+
             if (tail) {
                 return currentLine.Line.LastOrDefault();
             } else {
