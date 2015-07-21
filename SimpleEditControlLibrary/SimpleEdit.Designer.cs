@@ -32,11 +32,14 @@
             // 
             // SimpleEdit
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
             this.Cursor = System.Windows.Forms.Cursors.IBeam;
+            this.Font = new System.Drawing.Font("Segoe UI Symbol", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.Name = "SimpleEdit";
+            this.Size = new System.Drawing.Size(175, 187);
             this.Load += new System.EventHandler(this.SimpleEdit_Load);
             this.MouseClick += new System.Windows.Forms.MouseEventHandler(this.SimpleEdit_MouseClick);
             this.ResumeLayout(false);

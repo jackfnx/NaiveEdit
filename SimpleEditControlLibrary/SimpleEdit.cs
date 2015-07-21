@@ -15,10 +15,11 @@ namespace SimpleEditControlLibrary
     {
         private SimpleDocument sDoc;
 
-        public SimpleEdit()
-        {
+        public SimpleEdit() {
+
+            sDoc = new SimpleDocument(this.Size, this.Font, "你是否涉及阿弗拉的实际负拉动世界");
+
             InitializeComponent();
-            sDoc = new SimpleDocument(this.Size, this.Font, "阿斯顿附近洒落的，斯蒂芬接口岁的金发科技ffff呵呵");
         }
 
         protected override void OnResize(EventArgs e) {
@@ -154,7 +155,7 @@ namespace SimpleEditControlLibrary
         }
 
         private void SimpleEdit_MouseClick(object sender, MouseEventArgs e) {
-            sDoc.MoveCursorTo(e.Location);
+            sDoc.SetInsertPos(e.Location);
             this.Refresh();
         }
     }
