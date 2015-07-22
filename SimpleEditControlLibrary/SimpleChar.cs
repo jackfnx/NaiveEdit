@@ -7,11 +7,17 @@ using System.Threading.Tasks;
 namespace SimpleEditControlLibrary {
 
     class SimpleChar {
+        public static SimpleChar LineEnd {
+            get { var sc = new SimpleChar('\0', 0, 0); sc.IsLineEnd = true; return sc; }
+        }
+
         public char Ch { get; set; }
         public float Width { get; set; }
         public float Height { get; set; }
         public float X { get; set; }
         public float Y { get; set; }
+        public bool IsLineEnd { get; private set; }
+        public SimpleLine Line { get; set; }
 
         public SimpleChar(char ch, float width, float height) {
             this.Ch = ch;
@@ -22,7 +28,7 @@ namespace SimpleEditControlLibrary {
         }
 
         public override string ToString() {
-            return Ch.ToString();
+            return IsLineEnd ? "LineEnd" : Ch.ToString();
         }
 
         public bool isHanzi() {

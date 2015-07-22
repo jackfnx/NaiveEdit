@@ -46,7 +46,7 @@ namespace SimpleEditControlLibrary {
             Image buffer = new Bitmap(this.size.Width, this.size.Height);
             Graphics g = Graphics.FromImage(buffer);
 
-            List<SimpleChar> chars = new List<SimpleChar>(text.Length);
+            var chars = new List<SimpleChar>(text.Length);
             foreach (char ch in text) {
                 String vStr = ch.ToString();
                 switch (ch) {
@@ -66,13 +66,14 @@ namespace SimpleEditControlLibrary {
         }
 
         private void DrawText() {
-            List<PointF> positions = new List<PointF>();
-            List<char> chars = new List<char>();
+            var positions = new List<PointF>();
+            var chars = new List<char>();
             float y = 0;
             foreach (SimpleSection sec in this.sections) {
                 foreach (SimpleLine line in sec.Lines) {
                     for (int j = 0; j < line.Line.Count; j++) {
-                        positions.Add(new PointF(line.Line[j].X, y + this.font.Height));
+                        line.Line[j].Y = y;
+                        positions.Add(new PointF(line.Line[j].X, line.Line[j].Y + this.font.Height));
                         chars.Add(line.Line[j].Ch);
                     }
                     y += ROW_SPACING + this.font.Height;
@@ -82,28 +83,34 @@ namespace SimpleEditControlLibrary {
             Image buffer = new Bitmap(this.size.Width, this.size.Height);
             Graphics g = Graphics.FromImage(buffer);
             GdiPlusUtils.DrawString(g, new string(chars.ToArray()), this.font, Brushes.Black, positions.ToArray(), null);
+            g.DrawLine(Pens.LightGray, LINE_LENGTH, 0, LINE_LENGTH, this.size.Height);
             this.DrawBuffer = buffer;
         }
 
         public void Insert(String text) {
-            List<SimpleChar> chars = ConvertChars(text);
+            text = text.Replace("\r\n", "\n");
+            var chars = ConvertChars(text);
             if (this.insertPos == null) {
                 SimpleSection lastSec = sections.LastOrDefault();
                 lastSec.Append(chars);
                 while (chars.Count != 0) {
                     trimLeftReturn(chars);
-                    this.sections.Add(new SimpleSection().Append(chars));
+                    SimpleSection sec = new SimpleSection();
+                    sec.Append(chars);
+                    this.sections.Add(sec);
                 }
             } else {
-                int secIndex = sections.FindIndex(x => x.Contains(this.insertPos));
-                SimpleSection currentSec = sections[secIndex];
+                SimpleSection currentSec = this.insertPos.Line.Section;
+                int currentSecIndex = sections.IndexOf(currentSec);
                 currentSec.Insert(this.insertPos, chars);
                 List<SimpleSection> block = new List<SimpleSection>();
                 while (chars.Count != 0) {
                     trimLeftReturn(chars);
-                    block.Add(new SimpleSection().Append(chars));
+                    SimpleSection sec = new SimpleSection();
+                    sec.Append(chars);
+                    block.Add(sec);
                 }
-                this.sections.InsertRange(secIndex, block);
+                this.sections.InsertRange(currentSecIndex + 1, block);
             }
 
             DrawText();
@@ -121,34 +128,14 @@ namespace SimpleEditControlLibrary {
         }
 
         private Point CharLocation(SimpleChar activeChar) {
-            float left = 0;
-            float top = 0;
-
-            SimpleLine currentLine = null;
-            foreach (SimpleSection sec in sections) {
-                foreach (SimpleLine line in sec.Lines) {
-                    if (activeChar != null && line.Contains(activeChar)) {
-                        currentLine = line;
-                        break;
-                    }
-                    top += font.Height + ROW_SPACING;
-                }
+            if (activeChar == null) {
+                activeChar = sections.LastOrDefault().Lines.LastOrDefault().Line.LastOrDefault();
             }
-            if (currentLine == null) {
-                currentLine = sections.LastOrDefault().Lines.LastOrDefault();
-                top -= font.Height + ROW_SPACING;
+            if (activeChar == null) {
+                return new Point(0, 0);
+            } else {
+                return new Point(Convert.ToInt32(activeChar.X), Convert.ToInt32(activeChar.Y));
             }
-
-            for (int i = 0; i < currentLine.Line.Count; i++) {
-                SimpleChar sc = currentLine.Line[i];
-                if (activeChar != null && sc == activeChar) {
-                    break;
-                }
-                left += currentLine.CharSpacing(i) + sc.Width;
-            }
-
-            Point p = new Point(Convert.ToInt32(left), Convert.ToInt32(top));
-            return p;
         }
 
         public void SetInsertPos(Point location) {

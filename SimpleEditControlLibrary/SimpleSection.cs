@@ -14,45 +14,51 @@ namespace SimpleEditControlLibrary {
             this.Lines.Add(new SimpleLine());
         }
 
-        public SimpleSection Append(List<SimpleChar> chars) {
-            List<SimpleChar> pickUps = PickUpChars(chars);
+        public void Append(List<SimpleChar> chars) {
+            var oldText = Lines.SelectMany(x => x.Line).Where(x => !x.IsLineEnd);
+            var pickUps = PickUpChars(chars);
 
-            SimpleLine lastLine = Lines.LastOrDefault();
-            lastLine.Append(pickUps);
-            List<SimpleChar> overflow = lastLine.Overflow();
-            while (overflow != null) {
-                SimpleLine newLine = new SimpleLine(overflow);
-                this.Lines.Add(newLine);
-                overflow = newLine.Overflow();
-            }
+            var newText = new List<SimpleChar>(oldText);
+            newText.AddRange(pickUps);
 
-            return this;
+            var lines = new List<SimpleLine>();
+            do {
+                var line = new SimpleLine();
+                line.Fill(newText);
+                lines.Add(line);
+                line.Section = this;
+            } while (newText.Count > 0);
+
+            this.Lines = lines;
         }
 
-        public bool Contains(SimpleChar sc) {
-            return Lines.Exists(x => x.Line.Contains(sc));
-        }
+        public void Insert(SimpleChar position, List<SimpleChar> chars) {
+            var oldText = Lines.SelectMany(x => x.Line);
+            var pickUps = PickUpChars(chars);
 
-        public SimpleSection Insert(SimpleChar position, List<SimpleChar> chars) {
-            List<SimpleChar> pickUps = PickUpChars(chars);
-
-            int lineIndex = Lines.FindIndex(x => x.Contains(position));
-            SimpleLine currentLine = Lines[lineIndex];
-            currentLine.Insert(currentLine.Line.IndexOf(position), pickUps);
-
-            List<SimpleChar> overflow = currentLine.Overflow();
-            for (int j = lineIndex + 1; j < Lines.Count && overflow != null; j++) {
-                SimpleLine line = Lines[j];
-                line.Insert(0, overflow);
-                overflow = line.Overflow();
-            }
-            while (overflow != null) {
-                SimpleLine newLine = new SimpleLine(overflow);
-                Lines.Add(newLine);
-                overflow = newLine.Overflow();
+            var newText = new List<SimpleChar>(oldText);
+            int index = newText.IndexOf(position);
+            if (index >= 0) {
+                if (chars.Count > 0) {
+                    chars.AddRange(newText.GetRange(index, newText.Count - index));
+                    newText.RemoveRange(index, newText.Count - index);
+                    newText.AddRange(pickUps);
+                } else {
+                    newText.InsertRange(index, pickUps);
+                }
+            } else {
+                newText.AddRange(pickUps);
             }
 
-            return this;
+            var lines = new List<SimpleLine>();
+            do {
+                var line = new SimpleLine();
+                line.Fill(newText);
+                lines.Add(line);
+                line.Section = this;
+            } while (newText.Count > 0);
+
+            this.Lines = lines;
         }
 
         private List<SimpleChar> PickUpChars(List<SimpleChar> chars) {
@@ -62,5 +68,6 @@ namespace SimpleEditControlLibrary {
             chars.RemoveRange(0, i); // 清除本段内容
             return pickUps;
         }
+
     }
 }

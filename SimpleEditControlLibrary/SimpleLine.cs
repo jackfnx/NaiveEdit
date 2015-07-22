@@ -11,35 +11,16 @@ namespace SimpleEditControlLibrary {
         public float SpacingHanzi { get; private set; }
         public float SpacingHanWestern { get; private set; }
         public float SpacingWestern { get; private set; }
+        public SimpleSection Section { get; set; }
 
         public SimpleLine() {
             Line = new List<SimpleChar>();
+            Line.Add(SimpleChar.LineEnd);
             SpacingHanzi = SimpleDocument.BEST_SPACING;
             SpacingHanWestern = SimpleDocument.MIN_SPACING;
             SpacingWestern = 1;
         }
-
-        public SimpleLine(List<SimpleChar> chars)
-            : this() {
-            Append(chars);
-        }
-
-        public bool Contains(SimpleChar sc) {
-            return Line.Contains(sc);
-        }
-
-        public void Insert(int position, List<SimpleChar> chars) {
-            Line.InsertRange(position, chars);
-        }
-
-        public void Append(List<SimpleChar> chars) {
-            Line.AddRange(chars);
-        }
-
-        public void Delete(int position, int count) {
-            Line.RemoveRange(position, count);
-        }
-
+        
         public void ReCalcSpacing() {
             float len = 0;
             foreach (SimpleChar sc in Line) {
@@ -57,26 +38,33 @@ namespace SimpleEditControlLibrary {
             }
         }
 
-        public List<SimpleChar> Overflow() {
+        public void Fill(List<SimpleChar> lineChars) {
             ReCalcSpacing();
+
+            var line = new List<SimpleChar>();
             float x = 0;
-            int overflowPosition = -1;
-            for (int i = 0; i < Line.Count; i++) {
-                x += CharSpacing(i);
-                Line[i].X = x;
-                x += Line[i].Width;
-                if (x > SimpleDocument.LINE_LENGTH) {
-                    overflowPosition = i;
+            int i = 0;
+            for (; i < lineChars.Count; i++) {
+                var sc = lineChars[i];
+                var spacing = CharSpacing(i);
+
+                if (x + spacing + sc.Width > SimpleDocument.LINE_LENGTH) {
                     break;
                 }
+
+                x += spacing;
+                sc.X = x;
+                line.Add(sc);
+                sc.Line = this;
+                x += sc.Width;
             }
-            if (overflowPosition >= 0) {
-                List<SimpleChar> overflow = Line.GetRange(overflowPosition, Line.Count - overflowPosition);
-                Line.RemoveRange(overflowPosition, Line.Count - overflowPosition);
-                return overflow;
-            } else {
-                return null;
-            }
+            var end = SimpleChar.LineEnd;
+            end.X = x;
+            line.Add(end);
+            end.Line = this;
+            lineChars.RemoveRange(0, i < lineChars.Count ? i : lineChars.Count);
+
+            this.Line = line;
         }
 
         public float CharSpacing(int index) {
