@@ -11,11 +11,16 @@ namespace SimpleEditControlLibrary {
         public float SpacingHanzi { get; private set; }
         public float SpacingHanWestern { get; private set; }
         public float SpacingWestern { get; private set; }
-        public SimpleSection Section { get; set; }
+        public SimpleSection Section { get; private set; }
 
-        public SimpleLine() {
-            Line = new List<SimpleChar>();
-            Line.Add(SimpleChar.LineEnd);
+        public SimpleLine(SimpleSection section) {
+            this.Section = section;
+
+            this.Line = new List<SimpleChar>();
+            var lineEnd = SimpleChar.LineEnd;
+            this.Line.Add(lineEnd);
+            lineEnd.Line = this;
+
             SpacingHanzi = SimpleDocument.BEST_SPACING;
             SpacingHanWestern = SimpleDocument.MIN_SPACING;
             SpacingWestern = 1;

@@ -134,6 +134,28 @@ namespace SimpleEditControlLibrary
             }
         }
 
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData) {
+            switch (keyData) {
+                case Keys.Left:
+                    sDoc.SetInsertPosByMove(SimpleDocument.DirectOfMove.Left);
+                    this.Refresh();
+                    break;
+                case Keys.Right:
+                    sDoc.SetInsertPosByMove(SimpleDocument.DirectOfMove.Right);
+                    this.Refresh();
+                    break;
+                case Keys.Up:
+                    sDoc.SetInsertPosByMove(SimpleDocument.DirectOfMove.Up);
+                    this.Refresh();
+                    break;
+                case Keys.Down:
+                    sDoc.SetInsertPosByMove(SimpleDocument.DirectOfMove.Down);
+                    this.Refresh();
+                    break;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
         protected override void OnPaint(PaintEventArgs e) {
             base.OnPaint(e);
 
@@ -155,7 +177,7 @@ namespace SimpleEditControlLibrary
         }
 
         private void SimpleEdit_MouseClick(object sender, MouseEventArgs e) {
-            sDoc.SetInsertPos(e.Location);
+            sDoc.SetInsertPosByLocation(e.Location);
             this.Refresh();
         }
     }

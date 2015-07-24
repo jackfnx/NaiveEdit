@@ -11,7 +11,8 @@ namespace SimpleEditControlLibrary {
 
         public SimpleSection() {
             this.Lines = new List<SimpleLine>();
-            this.Lines.Add(new SimpleLine());
+            var line = new SimpleLine(this);
+            this.Lines.Add(line);
         }
 
         public void Append(List<SimpleChar> chars) {
@@ -22,10 +23,9 @@ namespace SimpleEditControlLibrary {
 
             var lines = new List<SimpleLine>();
             do {
-                var line = new SimpleLine();
+                var line = new SimpleLine(this);
                 line.Fill(newText);
                 lines.Add(line);
-                line.Section = this;
             } while (newText.Count > 0);
 
             this.Lines = lines;
@@ -43,10 +43,9 @@ namespace SimpleEditControlLibrary {
 
             var lines = new List<SimpleLine>();
             do {
-                var line = new SimpleLine();
+                var line = new SimpleLine(this);
                 line.Fill(newText);
                 lines.Add(line);
-                line.Section = this;
             } while (newText.Count > 0);
 
             // 更新光标位置：插入的最后一个字符后面

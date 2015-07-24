@@ -36,7 +36,7 @@ namespace SimpleEditControlLibrary {
         }
 
         public override string ToString() {
-            return IsLineEnd ? "LineEnd" : Ch.ToString();
+            return string.Format("{0} ({1},{2})", IsLineEnd ? "LineEnd" : Ch.ToString(), X, Y);
         }
     }
 }

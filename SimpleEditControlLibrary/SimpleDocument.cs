@@ -12,6 +12,8 @@ namespace SimpleEditControlLibrary {
         public const float MAX_SPACING = 10;
         public const float BEST_SPACING = 5;
         public const float ROW_SPACING = 2;
+        
+        public enum DirectOfMove { Left, Right, Up, Down }
 
         //private List<SimpleLine> lines;
         private List<SimpleSection> sections;
@@ -28,7 +30,7 @@ namespace SimpleEditControlLibrary {
             this.sections = new List<SimpleSection>();
             this.sections.Add(new SimpleSection());
 
-            this.insertPos = null;
+            this.insertPos = this.sections.Last().Lines.Last().Line.Last();
 
             Insert(text);
 
@@ -90,34 +92,23 @@ namespace SimpleEditControlLibrary {
         public void Insert(String text) {
             text = text.Replace("\r\n", "\n");
             var chars = ConvertChars(text);
-            if (this.insertPos == null) {
-                var lastSec = sections.Last();
-                lastSec.Append(chars);
-                while (chars.Count != 0) {
-                    trimLeftReturn(chars);
-                    SimpleSection sec = new SimpleSection();
-                    sec.Append(chars);
-                    this.sections.Add(sec);
-                }
-            } else {
-                var currentSec = this.insertPos.Line.Section;
-                int currentSecIndex = sections.IndexOf(currentSec);
+            var currentSec = this.insertPos.Line.Section;
+            int currentSecIndex = sections.IndexOf(currentSec);
 
-                if (currentSec.IsSectionEnd(this.insertPos)) {
-                    currentSec.Append(chars);
-                    this.insertPos = currentSec.Lines.Last().Line.Last();
-                } else {
-                    currentSec.Insert(ref this.insertPos, chars);
-                }
-                List<SimpleSection> block = new List<SimpleSection>();
-                while (chars.Count != 0) {
-                    trimLeftReturn(chars);
-                    SimpleSection sec = new SimpleSection();
-                    sec.Append(chars);
-                    block.Add(sec);
-                }
-                this.sections.InsertRange(currentSecIndex + 1, block);
+            if (currentSec.IsSectionEnd(this.insertPos)) {
+                currentSec.Append(chars);
+                this.insertPos = currentSec.Lines.Last().Line.Last();
+            } else {
+                currentSec.Insert(ref this.insertPos, chars);
             }
+            List<SimpleSection> block = new List<SimpleSection>();
+            while (chars.Count != 0) {
+                trimLeftReturn(chars);
+                SimpleSection sec = new SimpleSection();
+                sec.Append(chars);
+                block.Add(sec);
+            }
+            this.sections.InsertRange(currentSecIndex + 1, block);
 
             DrawText();
         }
@@ -130,39 +121,45 @@ namespace SimpleEditControlLibrary {
         }
         
         public Point CursorLocation() {
-            return CharLocation(this.insertPos);
+            return new Point(Convert.ToInt32(this.insertPos.X), Convert.ToInt32(this.insertPos.Y));
         }
 
-        private Point CharLocation(SimpleChar activeChar) {
-            if (activeChar == null) {
-                activeChar = sections.Last().Lines.Last().Line.Last();
-            }
-            if (activeChar == null) {
-                return new Point(0, 0);
-            } else {
-                return new Point(Convert.ToInt32(activeChar.X), Convert.ToInt32(activeChar.Y));
+        public void SetInsertPosByMove(DirectOfMove dir) {
+            switch (dir) {
+                case DirectOfMove.Left:
+                    this.insertPos = PreviousChar(this.insertPos);
+                    break;
+                case DirectOfMove.Right:
+                    this.insertPos = NextChar(this.insertPos);
+                    break;
+                case DirectOfMove.Up:
+                    PointF pUp = new PointF(this.insertPos.X, this.insertPos.Y - this.font.Height - ROW_SPACING);
+                    SetInsertPosByLocation(pUp);
+                    break;
+                case DirectOfMove.Down:
+                    PointF pDown = new PointF(this.insertPos.X, this.insertPos.Y + this.font.Height + ROW_SPACING);
+                    SetInsertPosByLocation(pDown);
+                    break;
+                default:
+                    break;
             }
         }
 
-        public void SetInsertPos(Point location) {
+        public void SetInsertPosByLocation(PointF location) {
             this.insertPos = LocateChar(location);
         }
 
-        private SimpleChar LocateChar(Point location) {
+        private SimpleChar LocateChar(PointF location) {
             var currentLine = sections
                 .SelectMany(x => x.Lines)
-                .Where(x => {
-                    var oneChar = x.Line.Last();
-                    return oneChar.Y <= location.Y && (oneChar.Y + this.font.Height) > location.Y;
-                })
-                .SingleOrDefault();
+                .TakeWhile(x => x.Line[0].Y <= location.Y)
+                .LastOrDefault();
 
             if (currentLine == null) {
-                currentLine = sections.Last().Lines.Last();
-                //return currentLine.Line.Last();
+                currentLine = sections[0].Lines[0];
             }
 
-            for (int i = 0; i < currentLine.Line.Count-1; i++) {
+            for (int i = 0; i < currentLine.Line.Count - 1; i++) {
                 var left = currentLine.Line[i];
                 var right = currentLine.Line[i + 1];
                 if (left.Right <= location.X && right.Right > location.X) {
@@ -170,6 +167,44 @@ namespace SimpleEditControlLibrary {
                 }
             }
             return currentLine.Line.Last();
+        }
+
+        private SimpleChar PreviousChar(SimpleChar c) {
+            int index = c.Line.Line.IndexOf(c);
+            if (index > 0) {
+                return c.Line.Line[index - 1];
+            } else {
+                int lineIndex = c.Line.Section.Lines.IndexOf(c.Line);
+                if (lineIndex > 0) {
+                    return c.Line.Section.Lines[lineIndex - 1].Line.Last();
+                } else {
+                    int secIndex = sections.IndexOf(c.Line.Section);
+                    if (secIndex > 0) {
+                        return sections[secIndex - 1].Lines.Last().Line.Last();
+                    } else {
+                        return sections[0].Lines[0].Line[0];
+                    }
+                }
+            }
+        }
+
+        private SimpleChar NextChar(SimpleChar c) {
+            int index = c.Line.Line.IndexOf(c);
+            if (index < c.Line.Line.Count - 1) {
+                return c.Line.Line[index + 1];
+            } else {
+                int lineIndex = c.Line.Section.Lines.IndexOf(c.Line);
+                if (lineIndex < c.Line.Line.Count - 1) {
+                    return c.Line.Section.Lines[lineIndex + 1].Line[0];
+                } else {
+                    int secIndex = sections.IndexOf(c.Line.Section);
+                    if (secIndex > sections.Count - 1) {
+                        return sections[secIndex + 1].Lines[0].Line[0];
+                    } else {
+                        return sections.Last().Lines.Last().Line.Last();
+                    }
+                }
+            }
         }
     }
 }
