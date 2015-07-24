@@ -16,6 +16,10 @@ namespace SimpleEditControlLibrary {
         public float Height { get; set; }
         public float X { get; set; }
         public float Y { get; set; }
+        public float Left { get { return X; } }
+        public float Top { get { return Y; } }
+        public float Right { get { return X + Width; } }
+        public float Bottom { get { return Y + Height; } }
         public bool IsLineEnd { get; private set; }
         public SimpleLine Line { get; set; }
 
@@ -27,12 +31,12 @@ namespace SimpleEditControlLibrary {
             this.Y = 0;
         }
 
-        public override string ToString() {
-            return IsLineEnd ? "LineEnd" : Ch.ToString();
-        }
-
         public bool isHanzi() {
             return Ch >= 0x4e00 && Ch <= 0x9fbb;
+        }
+
+        public override string ToString() {
+            return IsLineEnd ? "LineEnd" : Ch.ToString();
         }
     }
 }

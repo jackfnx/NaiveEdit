@@ -46,7 +46,7 @@ namespace SimpleEditControlLibrary {
             int i = 0;
             for (; i < lineChars.Count; i++) {
                 var sc = lineChars[i];
-                var spacing = CharSpacing(i);
+                var spacing = CharSpacing(lineChars, i);
 
                 if (x + spacing + sc.Width > SimpleDocument.LINE_LENGTH) {
                     break;
@@ -67,14 +67,14 @@ namespace SimpleEditControlLibrary {
             this.Line = line;
         }
 
-        public float CharSpacing(int index) {
-            if (index < 0 || index >= Line.Count) {
+        private float CharSpacing(List<SimpleChar> line, int index) {
+            if (index < 0 || index >= line.Count) {
                 return 0;
             } else if (index == 0) {
                 return 0;
             } else {
-                SimpleChar leftChar = Line[index - 1];
-                SimpleChar rightChar = Line[index];
+                SimpleChar leftChar = line[index - 1];
+                SimpleChar rightChar = line[index];
                 if (leftChar.isHanzi() && rightChar.isHanzi()) {
                     return SpacingHanzi;
                 } else if (leftChar.isHanzi() != rightChar.isHanzi()) {
@@ -83,6 +83,17 @@ namespace SimpleEditControlLibrary {
                     return SpacingWestern;
                 }
             }
+        }
+
+        public override string ToString() {
+            StringBuilder sb = new StringBuilder();
+            foreach (var sc in Line) {
+                if (!sc.IsLineEnd) {
+                    sb.Append(sc.Ch);
+                }
+            }
+            sb.Append(string.Format("[{0} chars]", sb.Length));
+            return sb.ToString();
         }
     }
 }

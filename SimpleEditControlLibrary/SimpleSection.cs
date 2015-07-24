@@ -16,10 +16,9 @@ namespace SimpleEditControlLibrary {
 
         public void Append(List<SimpleChar> chars) {
             var oldText = Lines.SelectMany(x => x.Line).Where(x => !x.IsLineEnd);
-            var pickUps = PickUpChars(chars);
+            var appendText = PickUpChars(chars);
 
-            var newText = new List<SimpleChar>(oldText);
-            newText.AddRange(pickUps);
+            var newText = oldText.Concat(appendText).ToList();
 
             var lines = new List<SimpleLine>();
             do {
@@ -32,23 +31,15 @@ namespace SimpleEditControlLibrary {
             this.Lines = lines;
         }
 
-        public void Insert(SimpleChar position, List<SimpleChar> chars) {
-            var oldText = Lines.SelectMany(x => x.Line);
-            var pickUps = PickUpChars(chars);
+        public void Insert(ref SimpleChar position, List<SimpleChar> chars) {
+            var oldText = Lines.SelectMany(x => x.Line).ToList();
+            var insertText = PickUpChars(chars);
 
-            var newText = new List<SimpleChar>(oldText);
-            int index = newText.IndexOf(position);
-            if (index >= 0) {
-                if (chars.Count > 0) {
-                    chars.AddRange(newText.GetRange(index, newText.Count - index));
-                    newText.RemoveRange(index, newText.Count - index);
-                    newText.AddRange(pickUps);
-                } else {
-                    newText.InsertRange(index, pickUps);
-                }
-            } else {
-                newText.AddRange(pickUps);
-            }
+            int insertPos = oldText.IndexOf(position);
+            var leftText = oldText.Take(insertPos);
+            var rightText = oldText.Skip(insertPos);
+
+            var newText = leftText.Concat(insertText).Concat(rightText).Where(x => !x.IsLineEnd).ToList();
 
             var lines = new List<SimpleLine>();
             do {
@@ -57,6 +48,16 @@ namespace SimpleEditControlLibrary {
                 lines.Add(line);
                 line.Section = this;
             } while (newText.Count > 0);
+
+            // 更新光标位置：插入的最后一个字符后面
+            var insertTextLastChar = insertText.LastOrDefault();
+            if (insertTextLastChar!=null) {
+                var insertingLine=lines.Find(x => x.Line.Contains(insertTextLastChar));
+                int insertPosLeft = insertingLine.Line.IndexOf(insertTextLastChar);
+                if (insertPosLeft >= 0 && insertPosLeft < insertingLine.Line.Count - 1) {
+                    position = insertingLine.Line[insertPosLeft + 1]; // 更新光标位置
+                }
+            }
 
             this.Lines = lines;
         }
@@ -69,5 +70,12 @@ namespace SimpleEditControlLibrary {
             return pickUps;
         }
 
+        public bool IsSectionEnd(SimpleChar sc) {
+            return sc == Lines.Last().Line.Last();
+        }
+
+        public override string ToString() {
+            return string.Format("[{0} lines]", Lines.Count);
+        }
     }
 }
