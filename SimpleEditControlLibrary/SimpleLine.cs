@@ -12,14 +12,16 @@ namespace SimpleEditControlLibrary {
         public float SpacingHanWestern { get; private set; }
         public float SpacingWestern { get; private set; }
         public SimpleSection Section { get; private set; }
+        public SimpleChar End { get { return Line.Last(); } }
+        public SimpleChar Home { get { return Line.First(); } }
 
         public SimpleLine(SimpleSection section) {
             this.Section = section;
 
             this.Line = new List<SimpleChar>();
             var lineEnd = SimpleChar.LineEnd;
-            this.Line.Add(lineEnd);
             lineEnd.Line = this;
+            this.Line.Add(lineEnd);
 
             SpacingHanzi = SimpleDocument.BEST_SPACING;
             SpacingHanWestern = SimpleDocument.MIN_SPACING;
@@ -59,14 +61,14 @@ namespace SimpleEditControlLibrary {
 
                 x += spacing;
                 sc.X = x;
-                line.Add(sc);
                 sc.Line = this;
+                line.Add(sc);
                 x += sc.Width;
             }
             var end = SimpleChar.LineEnd;
             end.X = x;
-            line.Add(end);
             end.Line = this;
+            line.Add(end);
             lineChars.RemoveRange(0, i < lineChars.Count ? i : lineChars.Count);
 
             this.Line = line;

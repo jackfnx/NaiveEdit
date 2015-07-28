@@ -137,19 +137,27 @@ namespace SimpleEditControlLibrary
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData) {
             switch (keyData) {
                 case Keys.Left:
-                    sDoc.SetInsertPosByMove(SimpleDocument.DirectOfMove.Left);
+                    sDoc.SetInsertPosByMove(SimpleDocument.MoveOperation.Left);
                     this.Refresh();
                     break;
                 case Keys.Right:
-                    sDoc.SetInsertPosByMove(SimpleDocument.DirectOfMove.Right);
+                    sDoc.SetInsertPosByMove(SimpleDocument.MoveOperation.Right);
                     this.Refresh();
                     break;
                 case Keys.Up:
-                    sDoc.SetInsertPosByMove(SimpleDocument.DirectOfMove.Up);
+                    sDoc.SetInsertPosByMove(SimpleDocument.MoveOperation.Up);
                     this.Refresh();
                     break;
                 case Keys.Down:
-                    sDoc.SetInsertPosByMove(SimpleDocument.DirectOfMove.Down);
+                    sDoc.SetInsertPosByMove(SimpleDocument.MoveOperation.Down);
+                    this.Refresh();
+                    break;
+                case Keys.Home:
+                    sDoc.SetInsertPosByMove(SimpleDocument.MoveOperation.Home);
+                    this.Refresh();
+                    break;
+                case Keys.End:
+                    sDoc.SetInsertPosByMove(SimpleDocument.MoveOperation.End);
                     this.Refresh();
                     break;
             }
