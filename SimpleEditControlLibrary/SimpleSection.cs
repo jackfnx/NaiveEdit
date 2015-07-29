@@ -37,9 +37,9 @@ namespace SimpleEditControlLibrary {
         public SimpleSection Split(SimpleChar position) {
             var oldText = Lines.SelectMany(x => x.Line).ToList();
 
-            int insertPos = oldText.IndexOf(position);
-            var leftText = oldText.Take(insertPos).Where(x => !x.IsLineEnd).ToList();
-            var rightText = oldText.Skip(insertPos).Where(x => !x.IsLineEnd).ToList();
+            int splitPos = oldText.IndexOf(position);
+            var leftText = oldText.Take(splitPos).Where(x => !x.IsLineEnd).ToList();
+            var rightText = oldText.Skip(splitPos).Where(x => !x.IsLineEnd).ToList();
 
             var lines = new List<SimpleLine>();
             do {
@@ -53,6 +53,37 @@ namespace SimpleEditControlLibrary {
             var splitOne = new SimpleSection();
             splitOne.Insert(splitOne.End, rightText);
             return splitOne;
+        }
+
+        public void Merge(SimpleSection next) {
+            var oldText = Lines.SelectMany(x => x.Line);
+            var appendText = next.Lines.SelectMany(x => x.Line);
+
+            List<SimpleChar> newText = oldText.Concat(appendText).Where(x => !x.IsLineEnd).ToList();
+
+            var lines = new List<SimpleLine>();
+            do {
+                var line = new SimpleLine(this);
+                line.Fill(newText);
+                lines.Add(line);
+            } while (newText.Count > 0);
+
+            this.Lines = lines;
+        }
+
+        public void Delete(SimpleChar sc) {
+            var oldText = Lines.SelectMany(x => x.Line);
+
+            List<SimpleChar> newText = oldText.Where(x => x != sc && !x.IsLineEnd).ToList();
+
+            var lines = new List<SimpleLine>();
+            do {
+                var line = new SimpleLine(this);
+                line.Fill(newText);
+                lines.Add(line);
+            } while (newText.Count > 0);
+
+            this.Lines = lines;
         }
 
         public override string ToString() {

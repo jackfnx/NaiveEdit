@@ -39,7 +39,7 @@ namespace SimpleEditControlLibrary {
         }
 
         public bool IsPrintableChar() {
-            return IsLineEnd;
+            return !IsLineEnd;
         }
 
         public override string ToString() {

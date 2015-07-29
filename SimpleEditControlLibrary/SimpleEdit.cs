@@ -61,6 +61,7 @@ namespace SimpleEditControlLibrary
         private const int WM_IME_SETCONTEXT = 0x0281;
         private const int WM_IME_CHAR = 0x0286;
         private const int WM_CHAR = 0x0102;
+        private const int WM_KEYDOWN = 0x0100;
         private const int PM_REMOVE = 0x0001;
         private const int GCS_RESULTSTR = 0x0800;
         private const int GCS_COMPSTR = 0x0008;
@@ -115,11 +116,22 @@ namespace SimpleEditControlLibrary
             }
 
             switch (m.Msg) {
+                case WM_KEYDOWN:
+                    switch ((Keys)(int)m.WParam) {
+                        case Keys.Delete:
+                            sDoc.DeleteRight();
+                            this.Refresh();
+                            break;
+                    }
+                    break;
                 case WM_CHAR: // 英文
-                    KeyEventArgs e = new KeyEventArgs(((Keys)((int)((long)m.WParam))) | ModifierKeys);
-                    char ch = (char)e.KeyData;
-                    sDoc.Insert(ch.ToString());
-                    this.Refresh();
+                    if ((Keys)(int)m.WParam == Keys.Back) {
+                        sDoc.DeleteLeft();
+                        this.Refresh();
+                    } else {
+                        sDoc.Insert(Convert.ToString((char)m.WParam));
+                        this.Refresh();
+                    }
                     break;
                 case WM_IME_CHAR: // 中文
                     if (m.WParam.ToInt32() == PM_REMOVE) { // 如果不做这个判断.会打印出重复的中文 

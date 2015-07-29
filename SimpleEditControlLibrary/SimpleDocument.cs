@@ -104,20 +104,99 @@ namespace SimpleEditControlLibrary {
                 this.sections.Insert(currentSecIndex + 1, newSec);
             }
             currentSec.Insert(this.insertPos, secs[0]);
-            var lastInsertChar = secs[0].Count > 0 ? secs[0].Last() : null;
+            var lastInsertChar = secs[0].Count > 0 ? secs[0].Last() : currentSec.End;
             for (int i = 1; i < secs.Count-1; i++) {
                 SimpleSection sec = new SimpleSection();
                 sec.Insert(sec.End, secs[i]);
                 this.sections.Insert(currentSecIndex + i, sec);
-                lastInsertChar = secs[i].Count > 0 ? secs[i].Last() : lastInsertChar;
+                lastInsertChar = sec.End;
             }
             if (secs.Count > 1) {
                 var nextSec = sections[currentSecIndex + secs.Count - 1];
                 nextSec.Insert(nextSec.Home, secs[secs.Count - 1]);
+                if (secs[secs.Count - 1].Count > 0) {
+                    lastInsertChar = secs[secs.Count - 1].Last();
+                } else {
+                    lastInsertChar = null;
+                    this.insertPos = nextSec.Home;
+                }
             }
 
             if (lastInsertChar != null) {
                 this.insertPos = NextChar(lastInsertChar);
+            }
+
+            DrawText();
+        }
+
+        public void DeleteLeft() {
+            var currentSec = this.insertPos.Line.Section;
+            if (this.insertPos == currentSec.Home) {                // 段首
+                int currentSecIndex = sections.IndexOf(currentSec);
+                if (currentSecIndex > 0) {
+                    var previousSec = sections[currentSecIndex - 1];
+
+                    previousSec.Merge(currentSec);
+                    sections.Remove(currentSec);
+
+                    if (!this.insertPos.IsPrintableChar()) {        // 空段落
+                        this.insertPos = previousSec.End;
+                    }
+                }
+            } else {
+                var deleteChar = this.insertPos;
+                do {
+                    deleteChar = PreviousChar(deleteChar);
+                } while (!deleteChar.IsPrintableChar());
+
+                var nextChar = this.insertPos;
+                if (this.insertPos == currentSec.End) {
+                    nextChar = null;
+                } else {
+                    while (!nextChar.IsPrintableChar()) {
+                        nextChar = NextChar(nextChar);
+                    }
+                }
+
+                currentSec.Delete(deleteChar);
+                if (!this.insertPos.IsPrintableChar()) {
+                    if (nextChar != null) {
+                        this.insertPos = nextChar;
+                    } else {
+                        this.insertPos = currentSec.End;
+                    }
+                }
+            }
+
+            DrawText();
+        }
+
+        public void DeleteRight() {
+            var currentSec = this.insertPos.Line.Section;
+            if (this.insertPos == currentSec.End) {             // 段末
+                int currentSecIndex = sections.IndexOf(currentSec);
+                if (currentSecIndex <sections.Count-1) {
+                    var nextSec = sections[currentSecIndex + 1];
+
+                    this.insertPos = nextSec.Home;
+
+                    currentSec.Merge(nextSec);
+                    sections.Remove(nextSec);
+
+                    if (!this.insertPos.IsPrintableChar()) {    // 空段落
+                        this.insertPos = currentSec.End;
+                    }
+                }
+            } else {
+                var deleteChar = this.insertPos;
+                while (!deleteChar.IsPrintableChar()) {
+                    deleteChar = NextChar(deleteChar);
+                }
+
+                var nextChar = NextChar(deleteChar);
+
+                currentSec.Delete(deleteChar);
+                this.insertPos = nextChar;
             }
 
             DrawText();
@@ -203,11 +282,11 @@ namespace SimpleEditControlLibrary {
                 return c.Line.Line[index + 1];
             } else {
                 int lineIndex = c.Line.Section.Lines.IndexOf(c.Line);
-                if (lineIndex < c.Line.Line.Count - 1) {
-                    return c.Line.Section.Lines[lineIndex + 1].Line[0];
+                if (lineIndex < c.Line.Section.Lines.Count - 1) {
+                    return c.Line.Section.Lines[lineIndex + 1].Home;
                 } else {
                     int secIndex = sections.IndexOf(c.Line.Section);
-                    if (secIndex > sections.Count - 1) {
+                    if (secIndex < sections.Count - 1) {
                         return sections[secIndex + 1].Home;
                     } else {
                         return sections.Last().End;
