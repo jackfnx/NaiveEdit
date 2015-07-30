@@ -8,14 +8,13 @@ using System.Threading.Tasks;
 namespace SimpleEditControlLibrary {
     class SimpleDocument {
         public const float LINE_LENGTH = 480;
-        public const float MIN_SPACING = 3;
-        public const float MAX_SPACING = 10;
-        public const float BEST_SPACING = 5;
+        public const float MIN_SPACING = 1.5f;
+        public const float MAX_SPACING = 2.2f;
+        public const float BEST_SPACING = 1.8f;
         public const float ROW_SPACING = 2;
 
         public enum MoveOperation { Left, Right, Up, Down, Home, End }
 
-        //private List<SimpleLine> lines;
         private List<SimpleSection> sections;
         private Size size;
         private Font font;
@@ -175,7 +174,7 @@ namespace SimpleEditControlLibrary {
             var currentSec = this.insertPos.Line.Section;
             if (this.insertPos == currentSec.End) {             // 段末
                 int currentSecIndex = sections.IndexOf(currentSec);
-                if (currentSecIndex <sections.Count-1) {
+                if (currentSecIndex < sections.Count - 1) {
                     var nextSec = sections[currentSecIndex + 1];
 
                     this.insertPos = nextSec.Home;

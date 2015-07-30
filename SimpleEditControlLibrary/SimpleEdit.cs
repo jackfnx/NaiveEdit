@@ -17,7 +17,7 @@ namespace SimpleEditControlLibrary
 
         public SimpleEdit() {
 
-            sDoc = new SimpleDocument(this.Size, this.Font, "你是否涉及阿弗拉的实际负拉动世界经司法鉴定所肩负发送大量飞机福萨利发骚了福萨利的解放拉萨将大幅拉升");
+            sDoc = new SimpleDocument(this.Size, this.Font, "你是否涉及阿弗拉的实际负拉动世界经司法鉴定所肩负发送大量飞机福萨利发骚了福萨利的解放拉萨将大幅拉升反对撒娇范德萨风刀霜剑萨克拉发送点解啊发掘");
 
             InitializeComponent();
         }
