@@ -49,7 +49,7 @@ namespace SimpleEditControlLibrary {
                 x += sc.Width;
             }
             var end = SimpleChar.LineEnd;
-            end.X = x;
+            end.X = x + SpacingHanzi;
             end.Line = this;
             line.Add(end);
             lineChars.RemoveRange(0, i < lineChars.Count ? i : lineChars.Count);
@@ -67,7 +67,7 @@ namespace SimpleEditControlLibrary {
             if (lineChars.Count > 0) {
                 totalSpacing -= lineChars[0].Width;
             }
-            int spacingHanziCount = 0;
+            int spacingHanziCount = 1;
             for (int i = 0; i < lineChars.Count - 1; i++) {
                 SimpleChar leftChar = lineChars[i];
                 SimpleChar rightChar = lineChars[i + 1];

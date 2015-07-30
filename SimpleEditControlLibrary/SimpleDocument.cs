@@ -210,8 +210,16 @@ namespace SimpleEditControlLibrary {
             switch (op) {
                 case MoveOperation.Left:
                     this.insertPos = PreviousChar(this.insertPos);
+                    // 前一个字符是行末，并且不是段末，再往前找一格
+                    if (!this.insertPos.IsPrintableChar() && this.insertPos != this.insertPos.Line.Section.End) {
+                        this.insertPos = PreviousChar(this.insertPos);
+                    }
                     break;
                 case MoveOperation.Right:
+                    // 字符是行末，并且不是段末，多往后找一格
+                    if (!this.insertPos.IsPrintableChar() && this.insertPos != this.insertPos.Line.Section.End) {
+                        this.insertPos = NextChar(this.insertPos);
+                    }
                     this.insertPos = NextChar(this.insertPos);
                     break;
                 case MoveOperation.Up:
@@ -250,8 +258,9 @@ namespace SimpleEditControlLibrary {
             for (int i = 0; i < currentLine.Line.Count - 1; i++) {
                 var left = currentLine.Line[i];
                 var right = currentLine.Line[i + 1];
-                if (left.Right <= location.X && right.Right > location.X) {
-                    return right;
+                var midPoint = (left.Right + right.Left) / 2;
+                if (midPoint >= location.X) {
+                    return left;
                 }
             }
             return currentLine.End;
