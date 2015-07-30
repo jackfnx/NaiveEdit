@@ -8,9 +8,10 @@ using System.Threading.Tasks;
 namespace SimpleEditControlLibrary {
     class SimpleDocument {
         public const float LINE_LENGTH = 480;
-        public const float MIN_SPACING = 1.5f;
+        public const float MIN_SPACING_LOOSE = 1.5f;
+        public const float MIN_SPACING_TIGHT = 1.8f;
         public const float MAX_SPACING = 2.2f;
-        public const float BEST_SPACING = 1.8f;
+        public const float BEST_SPACING = 2.0f;
         public const float ROW_SPACING = 2;
 
         public enum MoveOperation { Left, Right, Up, Down, Home, End }

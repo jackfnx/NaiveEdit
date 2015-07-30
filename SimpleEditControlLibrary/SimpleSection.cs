@@ -25,9 +25,10 @@ namespace SimpleEditControlLibrary {
 
             List<SimpleChar> newText= leftText.Concat(insertChars).Concat(rightText).Where(x => !x.IsLineEnd).ToList();
             var lines = new List<SimpleLine>();
+            bool isLoose = true;
             do {
                 var line = new SimpleLine(this);
-                line.Fill(newText);
+                line.Fill(newText, isLoose=!isLoose);
                 lines.Add(line);
             } while (newText.Count > 0);
 
@@ -42,9 +43,10 @@ namespace SimpleEditControlLibrary {
             var rightText = oldText.Skip(splitPos).Where(x => !x.IsLineEnd).ToList();
 
             var lines = new List<SimpleLine>();
+            bool isLoose = true;
             do {
                 var line = new SimpleLine(this);
-                line.Fill(leftText);
+                line.Fill(leftText, isLoose = !isLoose);
                 lines.Add(line);
             } while (leftText.Count > 0);
 
@@ -62,9 +64,10 @@ namespace SimpleEditControlLibrary {
             List<SimpleChar> newText = oldText.Concat(appendText).Where(x => !x.IsLineEnd).ToList();
 
             var lines = new List<SimpleLine>();
+            bool isLoose = true;
             do {
                 var line = new SimpleLine(this);
-                line.Fill(newText);
+                line.Fill(newText, isLoose = !isLoose);
                 lines.Add(line);
             } while (newText.Count > 0);
 
@@ -77,9 +80,10 @@ namespace SimpleEditControlLibrary {
             List<SimpleChar> newText = oldText.Where(x => x != sc && !x.IsLineEnd).ToList();
 
             var lines = new List<SimpleLine>();
+            bool isLoose = true;
             do {
                 var line = new SimpleLine(this);
-                line.Fill(newText);
+                line.Fill(newText, isLoose = !isLoose);
                 lines.Add(line);
             } while (newText.Count > 0);
 

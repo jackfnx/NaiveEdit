@@ -24,42 +24,25 @@ namespace SimpleEditControlLibrary {
             this.Line.Add(lineEnd);
 
             SpacingHanzi = SimpleDocument.BEST_SPACING;
-            SpacingHanWestern = SimpleDocument.MIN_SPACING;
+            SpacingHanWestern = SimpleDocument.MIN_SPACING_LOOSE;
             SpacingWestern = 1;
         }
-        
-        public void ReCalcSpacing() {
-            float len = 0;
-            foreach (SimpleChar sc in Line) {
-                len += sc.Width;
-            }
-            int spacingCount = Line.Count - 1;
-            if (len + SimpleDocument.BEST_SPACING * spacingCount <= SimpleDocument.LINE_LENGTH) {
-                SpacingHanzi = SimpleDocument.BEST_SPACING;
-                SpacingHanWestern = SimpleDocument.MIN_SPACING;
-                SpacingWestern = 1;
-            } else {
-                SpacingHanzi = SimpleDocument.MIN_SPACING;
-                SpacingHanWestern = SimpleDocument.MIN_SPACING;
-                SpacingWestern = 1;
-            }
-        }
 
-        public void Fill(List<SimpleChar> lineChars) {
-            ReCalcSpacing();
+        public void Fill(List<SimpleChar> lineChars, bool isLoose) {
+            CalcSpacing(lineChars, isLoose);
 
             var line = new List<SimpleChar>();
             float x = 0;
             int i = 0;
             for (; i < lineChars.Count; i++) {
                 var sc = lineChars[i];
-                var spacing = CharSpacing(lineChars, i);
+                var leftSpacing = CharLeftSpacing(lineChars, i);
 
-                if (x + spacing + sc.Width > SimpleDocument.LINE_LENGTH) {
+                if (x + leftSpacing + sc.Width > SimpleDocument.LINE_LENGTH + 0.1f) {
                     break;
                 }
 
-                x += spacing;
+                x += leftSpacing;
                 sc.X = x;
                 sc.Line = this;
                 line.Add(sc);
@@ -74,7 +57,40 @@ namespace SimpleEditControlLibrary {
             this.Line = line;
         }
 
-        private float CharSpacing(List<SimpleChar> line, int index) {
+        private void CalcSpacing(List<SimpleChar> lineChars, bool isLoose) {
+            SpacingHanWestern = SimpleDocument.BEST_SPACING;
+            SpacingWestern = 0;
+
+            float minSpace = isLoose ? SimpleDocument.MIN_SPACING_LOOSE : SimpleDocument.MIN_SPACING_TIGHT;
+
+            float totalSpacing = SimpleDocument.LINE_LENGTH;
+            if (lineChars.Count > 0) {
+                totalSpacing -= lineChars[0].Width;
+            }
+            int spacingHanziCount = 0;
+            for (int i = 0; i < lineChars.Count - 1; i++) {
+                SimpleChar leftChar = lineChars[i];
+                SimpleChar rightChar = lineChars[i + 1];
+                if (leftChar.isHanzi() && rightChar.isHanzi()) {
+                    spacingHanziCount++;
+                } else if (leftChar.isHanzi() != rightChar.isHanzi()) {
+                    totalSpacing -= SpacingHanWestern;
+                } else {
+                    totalSpacing -= SpacingWestern;
+                }
+                totalSpacing -= rightChar.Width;
+                float aveSpacing = totalSpacing / spacingHanziCount;
+                if (aveSpacing > SimpleDocument.MAX_SPACING) {
+                    SpacingHanzi = SimpleDocument.BEST_SPACING;
+                } else if (aveSpacing >= minSpace) {
+                    SpacingHanzi = aveSpacing;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        private float CharLeftSpacing(List<SimpleChar> line, int index) {
             if (index < 0 || index >= line.Count) {
                 return 0;
             } else if (index == 0) {
