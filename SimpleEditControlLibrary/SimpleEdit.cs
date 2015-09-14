@@ -46,7 +46,7 @@ namespace SimpleEditControlLibrary
 
             CreateCaret(this.Handle, IntPtr.Zero, 2, this.FontHeight);
             Point p = sDoc.CursorLocation();
-            SetCaretPos(MARGIN_LEFT + p.X, p.Y);
+            SetCaretPos((int)(sDoc.MarginHorizontal() + p.X), p.Y);
             ShowCaret(this.Handle);
         }
 
@@ -179,21 +179,19 @@ namespace SimpleEditControlLibrary
             base.OnPaint(e);
 
             using (Graphics g = this.CreateGraphics()) {
-                g.DrawImage(sDoc.DrawBuffer, MARGIN_LEFT, 0);
-                g.FillRectangle(Brushes.LightGray, MARGIN_LEFT + SimpleDocument.LINE_LENGTH, 0, this.Width, this.Height);
-                g.FillRectangle(Brushes.LightGray, 0, 0, MARGIN_LEFT, this.Height);
+                g.DrawImage(sDoc.DrawBuffer, 0, 0);
             }
 
             Point p = sDoc.CursorLocation();
 
             // 更新光标位置
-            SetCaretPos(MARGIN_LEFT + p.X, p.Y);
+            SetCaretPos((int)(sDoc.MarginHorizontal() + p.X), p.Y);
 
             // 更新输入法悬浮窗口位置
             COMPOSITIONFORM cf = new COMPOSITIONFORM();
             cf.dwStyle = 2;
-            cf.ptCurrentPos.x = MARGIN_LEFT + p.X + 10;
-            cf.ptCurrentPos.y = MARGIN_LEFT + p.Y + 10;
+            cf.ptCurrentPos.x = (int)(sDoc.MarginHorizontal() + p.X + 10);
+            cf.ptCurrentPos.y = (int)(sDoc.MarginHorizontal() + p.Y + 10);
             ImmSetCompositionWindow(this.hIMC, ref cf);
         }
 
@@ -202,6 +200,9 @@ namespace SimpleEditControlLibrary
             this.Refresh();
         }
 
-        private int MARGIN_LEFT = 50;
+        protected override void OnSizeChanged(EventArgs e) {
+            sDoc.Resize(this.Width, this.Height);
+            base.OnSizeChanged(e);
+        }
     }
 }

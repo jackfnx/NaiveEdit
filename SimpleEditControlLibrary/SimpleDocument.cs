@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SimpleEditControlLibrary {
     class SimpleDocument {
@@ -71,7 +69,12 @@ namespace SimpleEditControlLibrary {
             return secs;
         }
 
+        public float MarginHorizontal() {
+            return (this.size.Width - LINE_LENGTH) / 2;
+        }
+
         private void DrawText() {
+            float marginHorizontal = MarginHorizontal();
             var positions = new List<PointF>();
             var chars = new List<char>();
             float y = 0;
@@ -79,7 +82,7 @@ namespace SimpleEditControlLibrary {
                 foreach (SimpleLine line in sec.Lines) {
                     foreach (SimpleChar sc in line.Line) {
                         sc.Y = y;
-                        positions.Add(new PointF(sc.X, sc.Y + this.font.Height));
+                        positions.Add(new PointF(sc.X + marginHorizontal, sc.Y + this.font.Height));
                         chars.Add(sc.Ch);
                     }
                     y += ROW_SPACING + this.font.Height;
@@ -87,8 +90,11 @@ namespace SimpleEditControlLibrary {
             }
             
             Image buffer = new Bitmap(this.size.Width, this.size.Height);
-            Graphics g = Graphics.FromImage(buffer);
-            GdiPlusUtils.DrawString(g, new string(chars.ToArray()), this.font, Brushes.Black, positions.ToArray(), null);
+            using (Graphics g = Graphics.FromImage(buffer)) {
+                GdiPlusUtils.DrawString(g, new string(chars.ToArray()), this.font, Brushes.Black, positions.ToArray(), null);
+                g.FillRectangle(Brushes.LightGray, 0, 0, marginHorizontal, this.size.Height);
+                g.FillRectangle(Brushes.LightGray, marginHorizontal + LINE_LENGTH, 0, this.size.Width, this.size.Height);
+            }
             this.DrawBuffer = buffer;
         }
 
