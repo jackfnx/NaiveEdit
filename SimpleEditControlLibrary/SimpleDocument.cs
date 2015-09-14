@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SimpleEditControlLibrary {
     class SimpleDocument {
-        public const float LINE_LENGTH = 480;
+        public const float LINE_LENGTH = 680;
         public const float MIN_SPACING_LOOSE = 1.5f;
         public const float MIN_SPACING_TIGHT = 1.8f;
         public const float MAX_SPACING = 2.2f;
@@ -89,7 +89,6 @@ namespace SimpleEditControlLibrary {
             Image buffer = new Bitmap(this.size.Width, this.size.Height);
             Graphics g = Graphics.FromImage(buffer);
             GdiPlusUtils.DrawString(g, new string(chars.ToArray()), this.font, Brushes.Black, positions.ToArray(), null);
-            g.DrawLine(Pens.LightGray, LINE_LENGTH, 0, LINE_LENGTH, this.size.Height);
             this.DrawBuffer = buffer;
         }
 

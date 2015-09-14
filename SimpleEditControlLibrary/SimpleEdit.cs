@@ -11,8 +11,7 @@ using System.Windows.Forms;
 
 namespace SimpleEditControlLibrary
 {
-    public partial class SimpleEdit: UserControl
-    {
+    public partial class SimpleEdit : UserControl {
         private SimpleDocument sDoc;
 
         public SimpleEdit() {
@@ -47,7 +46,7 @@ namespace SimpleEditControlLibrary
 
             CreateCaret(this.Handle, IntPtr.Zero, 2, this.FontHeight);
             Point p = sDoc.CursorLocation();
-            SetCaretPos(p.X, p.Y);
+            SetCaretPos(MARGIN_LEFT + p.X, p.Y);
             ShowCaret(this.Handle);
         }
 
@@ -57,7 +56,7 @@ namespace SimpleEditControlLibrary
             HideCaret(this.Handle);
             //DestroyCaret(this.Handle);
         }
-        
+
         private const int WM_IME_SETCONTEXT = 0x0281;
         private const int WM_IME_CHAR = 0x0286;
         private const int WM_CHAR = 0x0102;
@@ -180,19 +179,21 @@ namespace SimpleEditControlLibrary
             base.OnPaint(e);
 
             using (Graphics g = this.CreateGraphics()) {
-                g.DrawImage(sDoc.DrawBuffer, 0, 0);
+                g.DrawImage(sDoc.DrawBuffer, MARGIN_LEFT, 0);
+                g.FillRectangle(Brushes.LightGray, MARGIN_LEFT + SimpleDocument.LINE_LENGTH, 0, this.Width, this.Height);
+                g.FillRectangle(Brushes.LightGray, 0, 0, MARGIN_LEFT, this.Height);
             }
 
             Point p = sDoc.CursorLocation();
 
             // 更新光标位置
-            SetCaretPos(p.X, p.Y);
+            SetCaretPos(MARGIN_LEFT + p.X, p.Y);
 
             // 更新输入法悬浮窗口位置
             COMPOSITIONFORM cf = new COMPOSITIONFORM();
             cf.dwStyle = 2;
-            cf.ptCurrentPos.x = p.X + 10;
-            cf.ptCurrentPos.y = p.Y + 10;
+            cf.ptCurrentPos.x = MARGIN_LEFT + p.X + 10;
+            cf.ptCurrentPos.y = MARGIN_LEFT + p.Y + 10;
             ImmSetCompositionWindow(this.hIMC, ref cf);
         }
 
@@ -200,5 +201,7 @@ namespace SimpleEditControlLibrary
             sDoc.SetInsertPosByLocation(e.Location);
             this.Refresh();
         }
+
+        private int MARGIN_LEFT = 50;
     }
 }
